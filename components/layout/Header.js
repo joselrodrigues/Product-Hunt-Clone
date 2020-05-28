@@ -1,12 +1,14 @@
 import React from 'react';
+import clasNames from 'classnames'
 import Search from "../ui/Search";
 import NavBar from "./NavBar";
 import Link from "next/link";
+import style from "./Header.module.css"
 
 const Header = () => {
     return (
-        <header>
-            <div>
+        <header className={clasNames(style.header)}>
+            <div className={clasNames(style.headerContainer)}>
                 <div>
                     <p>Icono</p>
                     <Search/>
