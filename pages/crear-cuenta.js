@@ -1,29 +1,45 @@
-import React from 'react';
+import React, {useState} from 'react';
 import classNames from 'classnames'
-import Layout from "../components/layout/Layout";
-import {Formulario, InpuSubmit} from "../components/ui/Formulario";
-import style from '../components/ui/Formulario.module.scss'
+import {useFormik} from "formik";
+import {object, string} from "yup";
+import Router from "next/router";
 
-import useValidation from "../hooks/useValidation";
-import validarCrearCuenta from "../validacion/validarCrearCuenta";
+import {Error, Formulario, InpuSubmit} from "../components/ui/Formulario";
+import style from '../components/ui/Formulario.module.scss'
+import Layout from "../components/layout/Layout";
+import firebase from '../firebase'
 
 const CrearCuenta = () => {
 
-    const INITIAL_STATE = {
-        nombre:'',
-        email:'',
-        password:''
-    }
+    const [firebaseError, setFirebaseError] = useState(false);
 
-    const {errores, valores, submitform, handleSubmit, handleChange} = useValidation(INITIAL_STATE, validarCrearCuenta, crearCuenta);
+    let schema = object().shape({
+        nombre: string()
+            .required('El Nombre es requerido'),
+        email: string()
+            .email('Debe ser un email valido')
+            .required('El Email es requerido'),
+        password: string()
+            .required('El Password es requerido')
+            .min(6, 'El Password debe de ser de al menos 6 caracteres')
+    })
+    const {handleSubmit, handleChange, errors, values} = useFormik({
+        initialValues:{
+            nombre:'',
+            email:'',
+            password:''
+        },
+        validationSchema: schema,
+        onSubmit: async values => {
+            try {
+                await firebase.registrar(values);
+                Router.push('/');
+            }catch (e) {
+                setFirebaseError(e);
+            }
+        }
+    })
 
-    const {nombre, email, password} = valores;
-
-    async function crearCuenta() {
-        console.log("Creando cuenta....")
-    }
-
-    console.log(errores)
     return (
         <Layout>
             <h1 css={`
@@ -33,7 +49,7 @@ const CrearCuenta = () => {
                 Crear Cuenta
             </h1>
             <>
-                <Formulario>
+                <Formulario onSubmit={handleSubmit}>
                     <div className={classNames(style.campo)}>
                         <label htmlFor="nombre">Nombre</label>
                         <input
@@ -41,10 +57,12 @@ const CrearCuenta = () => {
                             id="nombre"
                             placeholder="Tu Nombre"
                             name="nombre"
-                            value={nombre}
+                            value={values.nombre}
                             onChange={handleChange}
                         />
                     </div>
+                    {errors.nombre && <Error>
+                        {errors.nombre}</Error>}
                     <div className={classNames(style.campo)}>
                         <label htmlFor="email">Email</label>
                         <input
@@ -52,25 +70,31 @@ const CrearCuenta = () => {
                             id="email"
                             placeholder="Tu Email"
                             name="email"
-                            value={email}
+                            value={values.email}
                             onChange={handleChange}
                         />
                     </div>
+                    {errors.email && <Error>
+                        {errors.email}</Error>}
                     <div className={classNames(style.campo)}>
-                        <label htmlFor="password">Email</label>
+                        <label htmlFor="password">Password</label>
                         <input
                             type="password"
                             id="password"
                             placeholder="Tu Password"
                             name="password"
-                            value={password}
+                            value={values.password}
                             onChange={handleChange}
                         />
                     </div>
+                    {errors.password && <Error>
+                        {errors.password}</Error>}
+
+                    {firebaseError.message && <Error>
+                        {firebaseError.message}</Error>}
                     <InpuSubmit
                         type="submit"
                         value="Crear Cuenta"
-                        onClick={handleSubmit}
                     />
                 </Formulario>
             </>
